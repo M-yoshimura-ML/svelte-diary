@@ -16,7 +16,7 @@
 	<section class="content">
 		<Router url="{url}">
 			<div>
-				<Route path="diary/:id" component="{Diary}" />
+				<Route path="diary/:id" component="{Diary}" let:params ><Diary id={params.id} /></Route>
 				<Route path="create" component="{Create}" />
 				<Route path="about" component="{About}" />
 				<Route path="/"><Home /></Route>

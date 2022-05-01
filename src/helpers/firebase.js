@@ -3,6 +3,8 @@ import { initializeApp } from "firebase/app";
 import { getAuth, signInWithPopup, GoogleAuthProvider, signOut } from "firebase/auth";
 import { userId } from "../store";
 import Cookies from 'js-cookie';
+import { getFirestore } from "firebase/firestore";
+import { getStorage } from "firebase/storage";
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
@@ -18,11 +20,12 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
+export const db = getFirestore();
+export const storage = getStorage(app);
 // console.log(app);
-
-
 const provider = new GoogleAuthProvider();
 const auth = getAuth();
+
 export const signWithGoogle = () => {
   signInWithPopup(auth, provider)
     .then((result) => {
@@ -34,6 +37,7 @@ export const signWithGoogle = () => {
       userId.set(result.user.uid);
       console.log(user);
       Cookies.set('uid', result.user.uid);
+      document.location.reload();
       // ...
     }).catch((error) => {
       // Handle Errors here.
