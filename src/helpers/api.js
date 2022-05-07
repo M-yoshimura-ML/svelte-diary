@@ -1,11 +1,23 @@
-import { collection, addDoc, getDocs,getDoc,updateDoc,deleteDoc, doc, query, where, orderBy } from "firebase/firestore";
+import { collection, addDoc, getDocs,getDoc,updateDoc,deleteDoc, doc, query, where, orderBy, limit } from "firebase/firestore";
 import { db, storage } from "./firebase";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import dayjs from 'dayjs';
 import { async } from "@firebase/util";
 
-export const fetch = async(uid = '') => {
-    const q = query(collection(db, "diaries"), where("uid", "==", uid), orderBy("createdAt", "desc"));
+export const fetch = async(uid = '', filterMonth=null) => {
+    let q;
+    if(filterMonth){
+        filterMonth = filterMonth.replace("-", "/");
+        // console.log(filterMonth);
+        q = query(collection(db, "diaries"), 
+        where("uid", "==", uid), 
+        where("createdAt", ">=", filterMonth + '/01'),
+        where("createdAt", "<=", filterMonth + '/31'), 
+        limit(31));
+    } else {
+        q = query(collection(db, "diaries"), where("uid", "==", uid), orderBy("createdAt", "desc"));
+    }
+    
 
     const querySnapshot = await getDocs(q);
     let diaries = [];
@@ -13,6 +25,7 @@ export const fetch = async(uid = '') => {
         console.log(doc.id, "=>", doc.data());
         diaries.push({
             id: doc.id,
+            title: doc.data().title,
             body: doc.data().body,
             rate: doc.data().rate,
             image: doc.data().image,
@@ -23,9 +36,11 @@ export const fetch = async(uid = '') => {
 }
 
 // Add a new document with a generated id.
-export const postDiary = async(uid='', body='', rate=1, image=null) => {
+export const postDiary = async(uid='', title='', body='', rate=1, image='') => {
     let uploadResult = '';
-    if(image){
+    // console.log('image', image);
+    // console.log('image.name', image.name);
+    if(image.name){
         const storageRef = ref(storage);
         const ext = image.name.split('.').pop();
         const hashName = Math.random().toString(36).slice(-8);
@@ -44,8 +59,10 @@ export const postDiary = async(uid='', body='', rate=1, image=null) => {
     }
 
     console.log(dayjs().format('YYYY/MM/DD HH:mm:ss'));
+    console.log(uploadResult);
     const docRef = await addDoc(collection(db, "diaries"), {
         uid: uid,
+        title: title,
         rate: rate,
         body: body,
         image: uploadResult,
@@ -69,7 +86,7 @@ export const getDiary = async(id = 'test') => {
 }
 
 
-export const updateDiary = async(id = '', body = '', rate = 1, image = '') => {
+export const updateDiary = async(id = '', title='', body = '', rate = 1, image = '') => {
     let uploadResult = '';
     if(image.name){
         const storageRef = ref(storage);
@@ -94,12 +111,14 @@ export const updateDiary = async(id = '', body = '', rate = 1, image = '') => {
     let updateData;
     if(image.name){
         updateData = {
+            title: title,
             body: body,
             rate: rate,
             image: uploadResult
         }
     } else {
         updateData = {
+            title: title,
             body: body,
             rate: rate
         }
